@@ -5,8 +5,8 @@ These conditions are called phenomenons.
 
 ## Phenomenons
 ### 1. Dirty Reads
-Transaction reads data written by a concurrent uncommitted transaction.\ 
-If the uncommitted transaction is rolled back, the reading transaction has read "dirty" data that never actually existed.\
+Transaction reads data written by a concurrent uncommitted transaction.\
+If the uncommitted transaction is rolled back, the reading transaction has read "dirty" data that never actually existed.
 
 **Example:**\
 Transaction 1 starts and updates a row in the database but does not commit yet.\
