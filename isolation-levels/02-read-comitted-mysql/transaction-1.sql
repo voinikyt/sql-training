@@ -1,4 +1,0 @@
-START TRANSACTION;
-INSERT INTO transactions(id, amount) VALUES (1, 100);
-DO SLEEP(15);
-ROLLBACK;
