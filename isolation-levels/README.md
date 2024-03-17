@@ -102,3 +102,14 @@ DO SLEEP(10);
 UPDATE account SET amount = @my_amount + 15 WHERE id = 1;
 COMMIT;
 ```
+
+## Isolation Levels
+
+To solve the above phenomenons one must increase the isolation level:
+
+| Phenomenon              | Read Uncommitted | Read Committed | Repeatable Read | Serializable |
+|-------------------------|------------------|----------------|-----------------|--------------|
+| Dirty Reads             | Possible         | Prevented      | Prevented       | Prevented    |
+| Non-Repeatable Reads    | Possible         | Possible       | Prevented       | Prevented    |
+| Phantom Reads           | Possible         | Possible       | Possible        | Prevented    |
+| Serialization Anomaly   | Possible         | Possible       | Possible        | Prevented    |
