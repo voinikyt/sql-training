@@ -8,7 +8,7 @@ These conditions are called phenomenons.
 To understand the phenomenons let's start by using a table as an example.
 Created in mysql:
 ```sql
-CREATE TABLE IF NOT EXISTS transactions
+CREATE TABLE IF NOT EXISTS account
 (
     id     INT PRIMARY KEY,
     amount NUMERIC NOT NULL
@@ -20,25 +20,85 @@ Transaction reads data written by a concurrent uncommitted transaction.\
 If the uncommitted transaction is rolled back, the reading transaction has read "dirty" data that never actually existed.
 
 **Example:**\
-Runs first:\
+Run in parallel the below 2 scripts:
 ```sql
 START TRANSACTION;
-INSERT INTO transactions(id, amount) VALUES (1, 100);
+INSERT INTO account(id, amount) VALUES (1, 100);
 DO SLEEP(15);
 ROLLBACK;
 ```
-And then:\
+
 ```sql
 SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 START TRANSACTION;
-SELECT * FROM transactions; -- dirty read happens
+SELECT * FROM account; -- dirty read happens
 COMMIT;
 ```
 
-The solutions is to increase the isolation level:
+### 2. Non-Repeatable Read
+
+A transaction re-execute the same query but sees updated data.
+
+First run:
 ```sql
-SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+INSERT INTO account(id, amount) VALUES (2, 20);
+```
+
+Then run in parallel:
+```sql
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 START TRANSACTION;
-SELECT * FROM transactions; -- dirty read not possible
+SELECT * FROM account;
+DO SLEEP(15);
+SELECT * FROM account;
+COMMIT;
+```
+
+```sql
+START TRANSACTION;
+UPDATE account
+SET amount = 21
+WHERE id = 2;
+COMMIT;
+```
+
+### 3. Phantom Read
+
+A transaction re-execute the same query but sees newly inserted data.
+
+Run in parallel:
+```sql
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+START TRANSACTION;
+SELECT * FROM account;
+DO SLEEP(15);
+SELECT * FROM account;
+COMMIT;
+```
+
+```sql
+START TRANSACTION;
+INSERT INTO account(id, amount) VALUES (1, 100);
+COMMIT;
+```
+
+### 4. Serialization Anomaly
+
+Run in parallel:
+```sql
+SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+START TRANSACTION;
+SELECT amount INTO @my_amount FROM account a  WHERE id = 1;
+DO SLEEP(15);
+UPDATE account SET amount = @my_amount + 10 WHERE id = 1;
+COMMIT;
+```
+
+```sql
+SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+START TRANSACTION;
+SELECT amount INTO @my_amount FROM account a  WHERE id = 1;
+DO SLEEP(10);
+UPDATE account SET amount = @my_amount + 15 WHERE id = 1;
 COMMIT;
 ```
