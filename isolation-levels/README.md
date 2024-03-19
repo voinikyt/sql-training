@@ -195,6 +195,6 @@ What if we have 100s of employees, and we must ignore 90 of them and process 10 
 Also let's say that we have 100s of processed employees.
 * we'll fetch a lot of data in memory
 
-### Cheeky solution running queries
+### Solution running queries - without being taught on isolation levels
 
 ## Concurrency Behaviour 
