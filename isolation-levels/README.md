@@ -154,7 +154,7 @@ Solution:
 
         // remove already processed
         employees.removeIf(employee -> {
-            if (!processedIds.contains(employee.id)) {
+            if (employee.getStatus().equals("PROCESSED") || !processedIds.contains(employee.id)) {
                 return false;
             }
             employee.setStatus("IGNORED");
@@ -185,8 +185,12 @@ Solution:
                 .toList();
 ```
 
-What if we have 100s of employees, and we must ignore almost all of them.
-That means a query 2 queries for each of them (select for update);
+What if we have 100s of employees, and we must ignore 90 of them and process 10 of them:
+* 180 queries - select for update
+* 20 for the successful ones
+
+Also let's say that we have 100s of processed employees.
+* we'll fetch a lot of data in memory
 
 ### Cheeky solution running queries
 
