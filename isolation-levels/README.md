@@ -145,42 +145,44 @@ Solution:
 
 ### Application Code Solution
 ```java
-Set<String> processedIds = employees.stream()
-        .filter(employee -> "PROCESSED".equals(employee.status))
-        .map(Employee::getId)
-        .collect(Collectors.toSet());
+        List<Employee> employees = fetchWithStatusNullOrStatus("PROCESSED");
 
-// remove already processed
-employees.removeIf(employee -> {
-    if (!processedIds.contains(employee.id)) {
-        return false;
-    }
-    employee.setStatus("IGNORED");
-    saveToDb(employee);
-    return true;
-});
+        Set<String> processedIds = employees.stream()
+                .filter(employee -> "PROCESSED".equals(employee.status))
+                .map(Employee::getId)
+                .collect(Collectors.toSet());
 
-Map<String, List<Employee>> groupings = employees.stream()
-        .collect(Collectors.groupingBy(Employee::getId));
-groupings.values().forEach(group -> group.sort(Comparator.comparing(Employee::getTimestamp)));
-groupings.forEach((employeeId, group) -> {
-    if (group.size() == 1) {
-        return;
-    }
-    Employee last = group.getLast();
-    group.removeIf(employee -> {
-        if (employee == last) {
-            return false;
-        }
-        employee.setStatus("IGNORED");
-        saveToDb(employee);
-        return true;
-    });
-});
+        // remove already processed
+        employees.removeIf(employee -> {
+            if (!processedIds.contains(employee.id)) {
+                return false;
+            }
+            employee.setStatus("IGNORED");
+            saveToDb(employee);
+            return true;
+        });
 
-List<Employee> latestRecords = groupings.values().stream()
-        .flatMap(Collection::stream)
-        .toList();
+        Map<String, List<Employee>> groupings = employees.stream()
+                .collect(Collectors.groupingBy(Employee::getId));
+        groupings.values().forEach(group -> group.sort(Comparator.comparing(Employee::getTimestamp)));
+        groupings.forEach((employeeId, group) -> {
+            if (group.size() == 1) {
+                return;
+            }
+            Employee last = group.getLast();
+            group.removeIf(employee -> {
+                if (employee == last) {
+                    return false;
+                }
+                employee.setStatus("IGNORED");
+                saveToDb(employee);
+                return true;
+            });
+        });
+
+        List<Employee> latestRecords = groupings.values().stream()
+                .flatMap(Collection::stream)
+                .toList();
 ```
 
 What if we have 100s of employees, and we must ignore almost all of them.
