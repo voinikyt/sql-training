@@ -154,11 +154,14 @@ Solution:
 
         // remove already processed
         employees.removeIf(employee -> {
-            if (employee.getStatus().equals("PROCESSED") || !processedIds.contains(employee.id)) {
+            if (!processedIds.contains(employee.id)) {
                 return false;
             }
-            employee.setStatus("IGNORED");
-            saveToDb(employee);
+            
+            if (!employee.getStatus().equals("PROCESSED")) {
+                employee.setStatus("IGNORED");
+                saveToDb(employee);    
+            }
             return true;
         });
 
