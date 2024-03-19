@@ -111,5 +111,86 @@ To solve the above phenomenons one must increase the isolation level:
 |-------------------------|------------------|----------------|-----------------|--------------|
 | Dirty Reads             | Possible         | Prevented      | Prevented       | Prevented    |
 | Non-Repeatable Reads    | Possible         | Possible       | Prevented       | Prevented    |
-| Phantom Reads           | Possible         | Possible       | Possible        | Prevented    |
+| Phantom Reads           | Possible         | Possible       | Prevented???    | Prevented    |
 | Serialization Anomaly   | Possible         | Possible       | Possible        | Prevented    |
+
+## Practical Examples
+The following is a table with events for employees.
+Every event contains a new state of an employee.
+
+| Employee ID | Name           | Address | Status    | Timestamp  |
+|-------------|----------------|---------|-----------|------------|
+| 1           | Jane Unmarried | NY      | NULL      | 2024-03-19 |
+| 1           | Jane Unmarried | CA      | NULL      | 2024-03-20 |
+| 2           | John Doe       | CH      | PROCESSED | 2024-03-21 |
+| 2           | John Doe       | CH      | NULL      | 2024-03-22 |
+
+Requirements:
+- our application sends employee to a third party service
+- the service only supports create requests - updates are not supported
+- create for existing employee returns an error
+- updates will be supported in future
+
+Solution:
+- when the application starts it groups all employees 
+- if there is any processed record for an employee -> ignore the rest
+- if there are no processed and there are more than 1 record -> leave the most recent one
+
+| Employee ID | Name           | Address | Status    | Timestamp  |
+|-------------|----------------|---------|-----------|------------|
+| 1           | Jane Unmarried | NY      | IGNORED   | 2024-03-19 |
+| 1           | Jane Unmarried | CA      | NULL      | 2024-03-20 |
+| 2           | John Doe       | CH      | PROCESSED | 2024-03-21 |
+| 2           | John Doe       | CH      | IGNORED   | 2024-03-22 |
+
+### Application Code Solution
+```java
+List<Employee> employees = fetchWithStatusNullOrStatus("PROCESSED");
+
+Set<String> processedIds = employees.stream()
+        .filter(employee -> "PROCESSED".equals(employee.status))
+        .map(Employee::getId)
+        .collect(Collectors.toSet());
+
+// remove already processed
+        employees.removeIf(employee -> {
+        if (!processedIds.contains(employee.id)) {
+        return false;
+        }
+        employee.setStatus("IGNORED");
+saveToDb(employee);
+            return true;
+                    });
+
+Map<String, List<Employee>> groupings = employees.stream()
+        .collect(Collectors.groupingBy(Employee::getId));
+        groupings.values().forEach(group -> group.sort(Comparator.comparing(Employee::getTimestamp)));
+        groupings.forEach((employeeId, group) -> {
+        if (group.size() == 1) {
+        return;
+        }
+Employee last = group.getLast();
+            group.removeIf(employee -> {
+        if (employee == last) {
+        return false;
+        }
+        employee.setStatus("IGNORED");
+saveToDb(employee);
+                return true;
+                        });
+                        });
+
+List<Employee> latestRecords = groupings.values().stream()
+        .flatMap(Collection::stream)
+        .toList();
+
+        System.out.println(latestRecords);
+    }
+```
+
+What if we have 100s of employees, and we must ignore almost all of them.
+That means a query 2 queries for each of them (select for update);
+
+### Cheeky solution running queries
+
+## Concurrency Behaviour 
