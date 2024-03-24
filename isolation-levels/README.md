@@ -164,12 +164,12 @@ Solution:
 
         Set<String> processedIds = employees.stream()
                 .filter(employee -> "PROCESSED".equals(employee.status))
-                .map(Employee::getId)
+                .map(Employee::getEmployeeId)
                 .collect(Collectors.toSet());
 
         // remove already processed
         employees.removeIf(employee -> {
-            if (!processedIds.contains(employee.id)) {
+            if (!processedIds.contains(employee.getEmployeeId())) {
                 return false;
             }
             
@@ -182,7 +182,7 @@ Solution:
         });
 
         Map<String, List<Employee>> groupings = employees.stream()
-                .collect(Collectors.groupingBy(Employee::getId));
+                .collect(Collectors.groupingBy(Employee::getEmployeeId));
         groupings.values().forEach(group -> group.sort(Comparator.comparing(Employee::getTimestamp)));
         groupings.forEach((employeeId, group) -> {
             if (group.size() == 1) {
