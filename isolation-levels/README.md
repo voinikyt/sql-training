@@ -277,6 +277,11 @@ VALUES ('1', 'Jane Unmarried', 'NY', NULL, '2024-04-01'),
        ('2', 'John Doe', 'TX', NULL, '2024-04-02');
 ```
 
+##### Solution
+```sql
+SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+```
+
 #### MySQL
 
 ```sql
@@ -339,4 +344,9 @@ COMMIT;
 INSERT INTO employee (employee_id, name, address, status, last_updated)
 VALUES ('1', 'Jane Unmarried', 'NY', NULL, '2024-04-01'),
        ('2', 'John Doe', 'TX', NULL, '2024-04-02');
+```
+
+##### Solution 
+```sql
+SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 ```
