@@ -3,6 +3,20 @@ Transaction isolation levels are best explained by the
 different racing conditions that can arise between separate transactions.
 These conditions are called phenomenons.
 
+# Table of Contents
+- [Overview](#overview)
+- [Phenomenons](#phenomenons)
+    - [Dirty Reads](#1-dirty-reads)
+    - [Non-Repeatable Read](#2-non-repeatable-read)
+    - [Phantom Read](#3-phantom-read)
+    - [Serialization Anomaly](#4-serialization-anomaly)
+- [Isolation Levels](#isolation-levels)
+- [Practical Examples](#practical-examples)
+    - [Application Code Solution](#application-code-solution)
+    - [Solution running queries - without being taught on isolation levels](#solution-running-queries---without-being-taught-on-isolation-levels)
+        - [PostgresSQL](#postgresql)
+        - [MySQL](#mysql)
+
 ## Phenomenons
 
 To understand the phenomenons let's start by using a table as an example.
