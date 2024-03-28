@@ -148,3 +148,103 @@ SQL Error [40001]: ERROR: could not serialize access due to read/write dependenc
         VALUES ('INV 1', 'CLI 2', 'random name 2')"
 PL/pgSQL function inline_code_block line 16 at SQL statement
 ```
+
+# PostgresSQL Solution without Contention
+
+```sql
+CREATE TABLE invoice_client
+(
+    invoice_id text NOT NULL,
+    client_id  text NOT NULL,
+    PRIMARY KEY (invoice_id)
+)
+```
+
+```sql
+begin;
+SET TRANSACTION ISOLATION LEVEL read committed;
+DO $$
+DECLARE
+     v_client_id TEXT;
+BEGIN
+	INSERT INTO invoice (invoice_id, client_id, name) 
+        VALUES ('INV 1', 'CLI 1', 'random name');
+   
+    perform pg_sleep(8);   
+       
+	INSERT INTO invoice_client (invoice_id, client_id)
+    VALUES ('INV 1', 'CLI 1')
+    ON CONFLICT (invoice_id)
+    DO UPDATE SET client_id = invoice_client.client_id
+    RETURNING client_id INTO v_client_id;      
+       
+    IF v_client_id <> 'CLI 1' THEN
+        RAISE EXCEPTION 'There is already an invoice for a different client. You fail.';
+    END IF;
+END $$;
+commit;
+```
+
+```sql
+begin;
+SET TRANSACTION ISOLATION LEVEL read committed;
+DO $$
+DECLARE
+     v_client_id TEXT;
+BEGIN
+	INSERT INTO invoice (invoice_id, client_id, name) 
+        VALUES ('INV 1', 'CLI 2', 'random name');
+   
+    perform pg_sleep(10);   
+       
+	INSERT INTO invoice_client (invoice_id, client_id)
+    VALUES ('INV 1', 'CLI 2')
+    ON CONFLICT (invoice_id)
+    DO UPDATE SET client_id = invoice_client.client_id
+    RETURNING client_id INTO v_client_id;       	
+   	       
+    IF v_client_id <> 'CLI 2' THEN
+        RAISE EXCEPTION 'There is already an invoice for a different client. You fail.';	  
+    END IF;
+END $$;
+commit;
+```
+
+## MySql Translation
+
+```mysql
+DELIMITER $$
+
+CREATE PROCEDURE process_invoice()
+BEGIN
+    DECLARE v_client_id VARCHAR(255);
+    
+    -- Attempt to insert the new invoice
+    INSERT INTO invoice (invoice_id, client_id, name) 
+    VALUES ('INV 1', 'CLI 2', 'random name');
+    
+    -- MySQL does not have a built-in sleep function in the SQL layer, 
+    -- but you can use SELECT SLEEP(10) if you really need to pause.
+    SELECT SLEEP(10);
+
+    -- Attempt to insert into the mapping table or update if there's a conflict
+    INSERT INTO invoice_to_client_mapping (invoice_id, client_id)
+    VALUES ('INV 1', 'CLI 2')
+    ON DUPLICATE KEY UPDATE client_id = VALUES(client_id);
+    
+    -- After attempting the insert/update, check if the client_id matches
+    SELECT client_id INTO v_client_id FROM invoice_to_client_mapping WHERE invoice_id = 'INV 1';
+    
+    IF v_client_id <> 'CLI 2' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'There is already an invoice for a different client. You fail.';
+    END IF;
+END$$
+
+DELIMITER ;
+```
+
+```mysql
+START TRANSACTION;
+CALL process_invoice();
+COMMIT;
+```
