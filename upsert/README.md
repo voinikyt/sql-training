@@ -80,5 +80,12 @@ END $$;
 
 # A Solution
 ```sql
-
+INSERT INTO public.client (id, "name", address, email)
+VALUES ('client_1', 'new name', 'new address', NULL),
+       ('client_2', 'name 2', 'address 2', NULL),
+       ('client_3', 'name 3', 'address 3', NULL),
+       ('client_4', 'name 4', 'address 4', NULL)
+ON CONFLICT ON CONSTRAINT client_pkey DO UPDATE
+    SET name    = EXCLUDED.name,
+        address = EXCLUDED.address;
 ```
