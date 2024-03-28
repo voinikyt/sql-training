@@ -228,12 +228,12 @@ BEGIN
     SELECT SLEEP(10);
 
     -- Attempt to insert into the mapping table or update if there's a conflict
-    INSERT INTO invoice_to_client_mapping (invoice_id, client_id)
+    INSERT INTO invoice_client (invoice_id, client_id)
     VALUES ('INV 1', 'CLI 2')
     ON DUPLICATE KEY UPDATE client_id = VALUES(client_id);
     
     -- After attempting the insert/update, check if the client_id matches
-    SELECT client_id INTO v_client_id FROM invoice_to_client_mapping WHERE invoice_id = 'INV 1';
+    SELECT client_id INTO v_client_id FROM invoice_client WHERE invoice_id = 'INV 1';
     
     IF v_client_id <> 'CLI 2' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'There is already an invoice for a different client. You fail.';
