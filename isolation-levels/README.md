@@ -3,25 +3,11 @@ Transaction isolation levels are best explained by the
 different racing conditions that can arise between separate transactions.
 These conditions are called phenomenons.
 
-# Table of Contents
-- [Overview](#overview)
-- [Phenomenons](#phenomenons)
-    - [Dirty Reads](#1-dirty-reads)
-    - [Non-Repeatable Read](#2-non-repeatable-read)
-    - [Phantom Read](#3-phantom-read)
-    - [Serialization Anomaly](#4-serialization-anomaly)
-- [Isolation Levels](#isolation-levels)
-- [Practical Examples](#practical-examples)
-    - [Application Code Solution](#application-code-solution)
-    - [Solution running queries - without being taught on isolation levels](#solution-running-queries---without-being-taught-on-isolation-levels)
-        - [PostgresSQL](#postgresql)
-        - [MySQL](#mysql)
-
 ## Phenomenons
 
 To understand the phenomenons let's start by using a table as an example.
 Created in mysql:
-```sql
+```mysql
 CREATE TABLE IF NOT EXISTS account
 (
     id     INT PRIMARY KEY,
@@ -35,14 +21,14 @@ If the uncommitted transaction is rolled back, the reading transaction has read 
 
 **Example:**\
 Run in parallel the below 2 scripts:
-```sql
+```mysql
 START TRANSACTION;
 INSERT INTO account(id, amount) VALUES (1, 100);
 DO SLEEP(15);
 ROLLBACK;
 ```
 
-```sql
+```mysql
 SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 START TRANSACTION;
 SELECT * FROM account; -- dirty read happens
@@ -54,12 +40,12 @@ COMMIT;
 A transaction re-execute the same query but sees updated data.
 
 First run:
-```sql
+```mysql
 INSERT INTO account(id, amount) VALUES (2, 20);
 ```
 
 Then run in parallel:
-```sql
+```mysql
 SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 START TRANSACTION;
 SELECT * FROM account;
@@ -68,7 +54,7 @@ SELECT * FROM account;
 COMMIT;
 ```
 
-```sql
+```mysql
 START TRANSACTION;
 UPDATE account
 SET amount = 21
@@ -81,7 +67,7 @@ COMMIT;
 A transaction re-execute the same query but sees newly inserted data.
 
 Run in parallel:
-```sql
+```mysql
 SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 START TRANSACTION;
 SELECT * FROM account;
@@ -90,7 +76,7 @@ SELECT * FROM account;
 COMMIT;
 ```
 
-```sql
+```mysql
 START TRANSACTION;
 INSERT INTO account(id, amount) VALUES (1, 100);
 COMMIT;
@@ -99,7 +85,7 @@ COMMIT;
 ### 4. Serialization Anomaly
 
 Run in parallel:
-```sql
+```mysql
 SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 START TRANSACTION;
 SELECT amount INTO @my_amount FROM account a  WHERE id = 1;
@@ -108,7 +94,7 @@ UPDATE account SET amount = @my_amount + 10 WHERE id = 1;
 COMMIT;
 ```
 
-```sql
+```mysql
 SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 START TRANSACTION;
 SELECT amount INTO @my_amount FROM account a  WHERE id = 1;
@@ -215,7 +201,7 @@ Also let's say that we have 100s of processed employees.
 ### Solution running queries - without being taught on isolation levels
 
 #### PostgresSQL
-```sql
+```mysql
 CREATE TABLE employee
 (
     id           SERIAL PRIMARY KEY,
@@ -227,7 +213,7 @@ CREATE TABLE employee
 );
 ```
 
-```sql
+```mysql
 INSERT INTO employee (employee_id, name, address, status, last_updated)
 VALUES ('1', 'Jane Unmarried', 'NY', NULL, '2024-03-19'),
        ('1', 'Jane Unmarried', 'CA', NULL, '2024-03-20'),
@@ -236,7 +222,7 @@ VALUES ('1', 'Jane Unmarried', 'NY', NULL, '2024-03-19'),
 ```
 
 Run in parallel:
-```sql
+```mysql
 BEGIN;
 
 SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
@@ -271,20 +257,20 @@ COMMIT;
 
 ```
 
-```sql
+```mysql
 INSERT INTO employee (employee_id, name, address, status, last_updated)
 VALUES ('1', 'Jane Unmarried', 'NY', NULL, '2024-04-01'),
        ('2', 'John Doe', 'TX', NULL, '2024-04-02');
 ```
 
 ##### Solution
-```sql
+```mysql
 SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 ```
 
 #### MySQL
 
-```sql
+```mysql
 CREATE TABLE employee
 (
     id           INT AUTO_INCREMENT PRIMARY KEY,
@@ -296,7 +282,7 @@ CREATE TABLE employee
 );
 ```
 
-```sql
+```mysql
 INSERT INTO employee (employee_id, name, address, status, last_updated)
 VALUES ('1', 'Jane Unmarried', 'NY', NULL, '2024-03-19'),
        ('1', 'Jane Unmarried', 'CA', NULL, '2024-03-20'),
@@ -305,7 +291,7 @@ VALUES ('1', 'Jane Unmarried', 'NY', NULL, '2024-03-19'),
 ```
 
 Now run in parallel:
-```sql
+```mysql
 SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
 START TRANSACTION;
 
@@ -340,13 +326,13 @@ SELECT * FROM employee WHERE status IS NULL;
 COMMIT;
 ```
 
-```sql
+```mysql
 INSERT INTO employee (employee_id, name, address, status, last_updated)
 VALUES ('1', 'Jane Unmarried', 'NY', NULL, '2024-04-01'),
        ('2', 'John Doe', 'TX', NULL, '2024-04-02');
 ```
 
 ##### Solution 
-```sql
+```mysql
 SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 ```

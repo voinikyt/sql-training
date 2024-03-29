@@ -1,6 +1,6 @@
 # Concurrency Issues
 
-```sql
+```postgresql
 CREATE TABLE client
 (
     id      text PRIMARY KEY,
@@ -34,7 +34,7 @@ clientRepository.save(fromDb);
 1. It's very slow having 3 queries per record. What if you have to import thousands of records.
 2. Concurrency issues
 
-```sql
+```postgresql
 DO $$
     DECLARE
         v_client RECORD;
@@ -59,7 +59,7 @@ DO $$
     END $$;
 ```
 
-```sql
+```postgresql
 DO $$
 DECLARE
     v_client RECORD;
@@ -79,7 +79,7 @@ END $$;
 ```
 
 # A Solution
-```sql
+```postgresql
 INSERT INTO public.client (id, "name", address, email)
 VALUES ('client_1', 'new name', 'new address', NULL),
        ('client_2', 'name 2', 'address 2', NULL),
