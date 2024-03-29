@@ -1,4 +1,4 @@
-# Concurrency Issues
+# Upsert Use Case
 
 ```sql
 CREATE TABLE client
