@@ -37,7 +37,7 @@ invoiceRepository.save(inv);
 
 or expressed as SQL
 
-```postgresql
+```sql
 DO
 $$
     DECLARE
@@ -61,7 +61,7 @@ $$
 $$;
 ```
 
-```postgresql
+```sql
 DO
 $$
     DECLARE
@@ -87,7 +87,7 @@ $$;
 
 # Solution with Postgres Creating a lot of Contention
 
-```postgresql
+```sql
 begin;
 SET TRANSACTION ISOLATION LEVEL serializable;
 DO $$
@@ -112,7 +112,7 @@ END $$;
 commit;
 ```
 
-```postgresql
+```sql
 begin;
 SET TRANSACTION ISOLATION LEVEL serializable ;
 DO $$
@@ -151,7 +151,7 @@ PL/pgSQL function inline_code_block line 16 at SQL statement
 
 # PostgresSQL Solution without Contention
 
-```postgresql
+```sql
 CREATE TABLE invoice_client
 (
     invoice_id text NOT NULL,
@@ -160,7 +160,7 @@ CREATE TABLE invoice_client
 )
 ```
 
-```postgresql
+```sql
 begin;
 SET TRANSACTION ISOLATION LEVEL read committed;
 DO $$
@@ -185,7 +185,7 @@ END $$;
 commit;
 ```
 
-```postgresql
+```sql
 begin;
 SET TRANSACTION ISOLATION LEVEL read committed;
 DO $$
